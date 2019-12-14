@@ -22,12 +22,17 @@ def fastTreeAdmin(Sequences):
         if theTree[nodeIndex][0].getTopHits() == []:
             initialiseTopHits(theTree, theTree[nodeIndex][0], activeNodes, totalProfile, totalUpDistance)
     while activeNodes > 2:
+        for node in theTree: # Increment all active node ages by 1
+            if theTree[node][0].getNodeStatus() == "Active":
+                nodeAge = theTree[node][0].getAge()
+                theTree[node][0].setAge(nodeAge + 1)
         bestJoinTuple = getBestJoin(theTree, activeNodes, totalProfile, totalUpDistance)[:2] # Find the best join
         newNodeIndex = len(theTree)
         newNode = fastTreeNode(newNodeIndex, getAvgProfile(theTree[bestJoinTuple[0]][0].getProfile(), theTree[bestJoinTuple[1]][0].getProfile()))
         theTree[newNodeIndex].append(newNode) # Add new node in the tree
         theTree[newNodeIndex][0].setLeftChild(bestJoinTuple[0])
         theTree[newNodeIndex][0].setRightChild(bestJoinTuple[1])
+        theTree[newNodeIndex][0].setAge(max(theTree[bestJoinTuple[0]][0].getAge(), theTree[bestJoinTuple[1]][0].getAge()) + 1)
         theTree[bestJoinTuple[0]][0].setParent(newNodeIndex)
         theTree[bestJoinTuple[0]][0].inActivate()
         theTree[bestJoinTuple[1]][0].setParent(newNodeIndex)
@@ -58,7 +63,9 @@ Sequences = mainFile.readlines()
 for i in range(0, len(Sequences)):
     Sequences[i] = Sequences[i].rstrip('\n')
 
+
 theTree = fastTreeAdmin(Sequences)
 for node in theTree:
     print(theTree[node][0].getIndex(), theTree[node][0].getRelatives())
+
 

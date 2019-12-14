@@ -18,8 +18,13 @@ class fastTreeNode:
         self.parent = None
         self.leftChild = None
         self.rightChild = None
+        self.age = 0
     def inActivate(self):
         self.status = "Inactive"
+    def getAge(self):
+        return self.age
+    def setAge(self, newAge):
+        self.age = newAge
     def getNodeLevel(self):
         if self.leftChild == None and self.rightChild == None: return "Leaf Node"
         else: return "Non-leaf Node"

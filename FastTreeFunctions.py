@@ -126,6 +126,7 @@ def refreshTopHits(aTree, aNode, totalActiveNodes, totalProfile, totalUpDist):
     topHits.sort(key=itemgetter(1))
     topHits = topHits[:totalHits]
     aTree[aNode][0].addTopHits(topHits, totalHits)
+    aTree[aNode][0].setAge(0)
     newNodeTopHits = aTree[aNode][0].getTopHits()
     #Compare all top hit nodes against each other
     allCombinationHits = defaultdict(list)
@@ -140,6 +141,7 @@ def refreshTopHits(aTree, aNode, totalActiveNodes, totalProfile, totalUpDist):
     #Add top hits to each node
     for node in allCombinationHits:
         aTree[node][0].addTopHits(allCombinationHits[node], totalHits)
+        aTree[node][0].setAge(0)
 
 # Search for best join in a tree
 def getBestJoin(aTree, totalActiveNodes, totalProfile, totalUpDist):
@@ -188,6 +190,7 @@ def reconfigureTopHits(theTree, bestJoinTuple, newNodeIndex, totalActiveNodes, t
                     newTopHits.append([newNodeIndex, neighbourJoinScore(theTree, theTree[node][0].getIndex(), newNodeIndex, totalActiveNodes, totalProfile, totalUpDist)])
             theTree[node][0].clearTopHits()
             theTree[node][0].addTopHits(newTopHits, totalHits)
+            theTree[node][0].setAge(0)
 
     parentTopHits = []
     leftChildHits = theTree[bestJoinTuple[0]][0].getTopHits()
@@ -203,5 +206,5 @@ def reconfigureTopHits(theTree, bestJoinTuple, newNodeIndex, totalActiveNodes, t
     for sublist in parentTopHits:
         if theTree[sublist[0]][0].getNodeStatus() == "Active": correctedHits.append(sublist)
     theTree[newNodeIndex][0].addTopHits(correctedHits, totalHits)
-    if len(theTree[newNodeIndex][0].getTopHits()) < totalHits:
+    if len(theTree[newNodeIndex][0].getTopHits()) < 0.4*totalHits or theTree[newNodeIndex][0].getAge() > (math.log2(totalHits)):
         refreshTopHits(theTree, newNodeIndex, totalActiveNodes, totalProfile, totalUpDist)
