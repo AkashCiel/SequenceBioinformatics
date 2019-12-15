@@ -32,14 +32,25 @@ for i in range(0, len(Sequences)):
     if i%2 == 1:
         rightEndReads = np.append(rightEndReads, Sequences[i])
 
-refGenome = referenceGenome.readlines()
-for i in range(0, len(refGenome)):
-    Sequences[i] = Sequences[i].rstrip('\n')
+refGenomeSeq = referenceGenome.readlines()
+refGenome = np.array([])
+for i in range(0, len(refGenomeSeq)):
+    refGenomeSeq[i] = refGenomeSeq[i].rstrip('\n')
+    refGenome = np.append(refGenome, refGenomeSeq[i])
 
-values = np.array([1,2,3,1,2,4,5,6,3,2,1])
-searchval = 3
-ii = np.where('A' in leftEndReads[0])
-
-print(minmaxSubstrings(leftEndReads[0], 'GAGGAGTCACT'))
-#print('ABC' in 'THUINAHABCKMJ')
-
+for i in range(50):
+    print(i, np.char.find(refGenome[0], leftEndReads[i]), np.char.find(refGenome[0], rightEndReads[i]))
+    if np.char.find(refGenome[0], leftEndReads[i]) == -1:
+        print(leftEndReads[i])
+        print(minmaxSubstrings(refGenome[0], leftEndReads[i], reverse=False))
+        print(minmaxSubstrings(refGenome[0], leftEndReads[i], reverse=True))
+        print("Reversed")
+        print(minmaxSubstrings(refGenome[0], leftEndReads[i][::-1], reverse=False))
+        print(minmaxSubstrings(refGenome[0], leftEndReads[i][::-1], reverse=True))
+    if np.char.find(refGenome[0], rightEndReads[i]) == -1:
+        print(rightEndReads[i])
+        print(minmaxSubstrings(refGenome[0], rightEndReads[i], reverse=False))
+        print(minmaxSubstrings(refGenome[0], rightEndReads[i], reverse=True))
+        print("Reversed")
+        print(minmaxSubstrings(refGenome[0], rightEndReads[i][::-1], reverse=False))
+        print(minmaxSubstrings(refGenome[0], rightEndReads[i][::-1], reverse=True))
