@@ -9,6 +9,22 @@ from decimal import *
 import math
 import numpy as np
 
+# Convert number to base 2 string
+def intoBase2String(number):
+    binaryConversion = "{0:b}".format(number)
+    return binaryConversion.zfill(12)
+
+# Return reverse compliment of the string
+def reverseCompliment(sequence):
+    sequence = sequence[::-1]
+    reverseSequence = ''
+    for nucleotide in sequence:
+        if nucleotide == "A": reverseSequence+="T"
+        elif nucleotide == "T": reverseSequence+="A"
+        elif nucleotide == "G": reverseSequence+="C"
+        elif nucleotide == "C": reverseSequence+="G"
+    return reverseSequence
+
 # Find minimum and maximum unique substrings
 def minmaxSubstrings(genome, pattern, reverse):
     if reverse == True:
@@ -28,8 +44,8 @@ def minmaxSubstrings(genome, pattern, reverse):
 
     finalSubStrings = []
     if len(subStrings) > 0:
-        finalSubStrings.append(subStrings[0])
-        finalSubStrings.append(subStrings[len(subStrings) - 1])
+        finalSubStrings.append(subStrings[0][::((-1*(reverse == True)) + (1*(reverse == False)))])
+        finalSubStrings.append(subStrings[len(subStrings) - 1][::((-1*(reverse == True)) + (1*(reverse == False)))])
     return finalSubStrings
 
 # Detect a deletion event
