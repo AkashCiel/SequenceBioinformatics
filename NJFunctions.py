@@ -31,7 +31,8 @@ def computeProfile(Sequences):
     #Fill in the profile matrix
     for aSequence in Sequences:
         for i in range(len(aSequence)):
-            TotalProfile[i][patternToNumber(aSequence[i])] += (1/totalSequences)
+            if aSequence[i] != '-':
+                TotalProfile[i][patternToNumber(aSequence[i])] += (1/totalSequences)
     return TotalProfile
 
 # Compute profile delta
@@ -85,8 +86,8 @@ def neighbourJoinScore(aTree, indexNode01, indexNode02, totalActiveNodes, totalP
     profileNode02 = aTree[indexNode02][0].getProfile()
     updist01 = getUpDistance(aTree, indexNode01)
     updist02 = getUpDistance(aTree, indexNode02)
-    outdist01 = ((totalActiveNodes*profileDelta(profileNode01, totalProfile)) - (totalActiveNodes-2)*updist01 - totalUpDist)/(totalActiveNodes - 2)
-    outdist02 = ((totalActiveNodes * profileDelta(profileNode02, totalProfile)) - (totalActiveNodes - 2)*updist02 - totalUpDist) / (totalActiveNodes - 2)
+    outdist01 = ((totalActiveNodes*profileDelta(profileNode01, totalProfile)) - (2*updist01) - (totalActiveNodes-2)*updist01 - totalUpDist)/(totalActiveNodes - 2)
+    outdist02 = ((totalActiveNodes * profileDelta(profileNode02, totalProfile)) - (2*updist02) - (totalActiveNodes-2)*updist02 - totalUpDist) / (totalActiveNodes - 2)
     joinScore = profileDelta(profileNode01, profileNode02) - updist01 - updist02 - outdist01 - outdist02
     return joinScore
 
@@ -153,7 +154,6 @@ def getBestJoin(aTree, totalActiveNodes, totalProfile, totalUpDist):
                 mBestJoins.append([node, aTree[node][0].getTopHits()[0][0], aTree[node][0].getTopHits()[0][1]])
     mBestJoins.sort(key=itemgetter(2))
     mBestJoins = mBestJoins[:totalJoins]
-    #print(mBestJoins)
     for i in range(len(mBestJoins)): # Update neighbour join score of m best joins
         mBestJoins[i][2] = neighbourJoinScore(aTree, mBestJoins[i][0], mBestJoins[i][1], totalActiveNodes, totalProfile, totalUpDist)
     mBestJoins.sort(key=itemgetter(2)) # Sort by updated neighbour score

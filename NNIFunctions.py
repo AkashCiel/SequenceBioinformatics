@@ -15,12 +15,15 @@ def nearestNeighbourExchange(aTree, initialSequences):
     totalRounds = math.log2(initialSequences) + 1
     while totalRounds > 0:
         for node in aTree:
-            if aTree[node][0].getNodeLevel() == "Internal Node" and aTree[node][0].getNNIStatus() == False:
+            if aTree[node][0].getNodeLevel() == "Internal Node": #and aTree[node][0].getNNIStatus() == False:
                 fixedNodes = []
                 floatingNodes = []
                 nodeProfiles = []
                 leftNodeChildren = aTree[node][0].getChildren()
                 leftNodeParent = aTree[node][0].getParent()
+                if leftNodeParent == None:
+                    totalRounds = 0
+                    break
                 rightNodeChildren = aTree[leftNodeParent][0].getChildren()
                 rightNodeParent = aTree[leftNodeParent][0].getParent()
                 if rightNodeParent == None:
@@ -47,7 +50,6 @@ def nearestNeighbourExchange(aTree, initialSequences):
                                      ((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfiles[1], nodeProfiles[2]))/3)))))
 
                 if joinDistances.index(min(joinDistances)) == 1:
-                    print(fixedNodes, 1)
                     aTree[fixedNodes[0]][0].setChildren([floatingNodes[0], floatingNodes[2]])
                     aTree[fixedNodes[0]][0].setProfile(getAvgProfile(nodeProfiles[0], nodeProfiles[2]))
                     aTree[fixedNodes[1]][0].setChildren([fixedNodes[0], floatingNodes[1]])
@@ -60,7 +62,6 @@ def nearestNeighbourExchange(aTree, initialSequences):
                     aTree[fixedNodes[1]][0].updateNNIStatus()
 
                 elif joinDistances.index(min(joinDistances)) == 2:
-                    print(fixedNodes, 2)
                     aTree[fixedNodes[0]][0].setChildren([floatingNodes[0], leftNodeParent])
                     aTree[fixedNodes[0]][0].setParent(rightNodeParent)
                     aTree[fixedNodes[0]][0].setProfile(getAvgProfile(nodeProfiles[0], aTree[leftNodeParent][0].getProfile()))
