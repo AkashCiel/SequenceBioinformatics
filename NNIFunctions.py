@@ -11,11 +11,27 @@ import math
 from FastTreeClasses import *
 from NJFunctions import *
 
+"""
+This section contains two functions: 
+    1. nearestNeighbourExchange 
+        As suggested by the name, it performs nearest neighbour interchange for log(number of sequences) times. 
+        It re-computes the profiles for the hypothetical joins it considers and uses these profiles to calculate the 
+        log-corrected profile distances for each hypothetical join. The join with the minimum log-corrected profile 
+        distance is implemented in the tree.
+    2. computeBranchLengths
+        After nearest neighbour exchange is completed, this function computes the branch length of every branch in the 
+        tree using log corrected profile distances.  
+"""
+
 def nearestNeighbourExchange(aTree, initialSequences):
     totalRounds = math.log2(initialSequences) + 1
+
+    # Looping until we exhaust total number of NNI rounds
     while totalRounds > 0:
         for node in aTree:
-            if aTree[node][0].getNodeLevel() == "Internal Node": #and aTree[node][0].getNNIStatus() == False:
+
+        # Look for an internal node to perform NNI, locate all nodes needed to perform NNI
+            if aTree[node][0].getNodeLevel() == "Internal Node":
                 fixedNodes = []
                 floatingNodes = []
                 nodeProfiles = []
@@ -42,6 +58,8 @@ def nearestNeighbourExchange(aTree, initialSequences):
                 nodeProfiles.append(aTree[rightNodeParent][0].getProfile())
 
                 joinDistances = []
+
+        # Compute all alternative join distances to select the best join from
                 joinDistances.append(((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfiles[0], nodeProfiles[1]))/3)))) +
                                      ((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfiles[2], nodeProfiles[3]))/3)))))
                 joinDistances.append(((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfiles[0], nodeProfiles[2]))/3)))) +
@@ -49,6 +67,7 @@ def nearestNeighbourExchange(aTree, initialSequences):
                 joinDistances.append(((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfiles[0], nodeProfiles[3]))/3)))) +
                                      ((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfiles[1], nodeProfiles[2]))/3)))))
 
+        # Performing (or not) the neighbour exchange, based on the values of join distances
                 if joinDistances.index(min(joinDistances)) == 1:
                     aTree[fixedNodes[0]][0].setChildren([floatingNodes[0], floatingNodes[2]])
                     aTree[fixedNodes[0]][0].setProfile(getAvgProfile(nodeProfiles[0], nodeProfiles[2]))
@@ -82,10 +101,51 @@ def nearestNeighbourExchange(aTree, initialSequences):
                     aTree[fixedNodes[0]][0].updateNNIStatus()
                     aTree[fixedNodes[1]][0].updateNNIStatus()
 
+        # Reduce total available NNI rounds by 1
                 totalRounds -= 1
     return aTree
 
+# Compute branch lengths after fast tree
+def computeBranchLengths(aTree):
+    allBranchLengths = []
+    for node in aTree:
 
+        # Branch length computation if we encounter a leaf node
+        if aTree[node][0].getNodeLevel() == "Leaf Node":
+            nodeProfile = aTree[node][0].getProfile()
+            sibling = (aTree[aTree[node][0].getParent()][0].getChildren()[0] == node) + (aTree[aTree[node][0].getParent()][0].getChildren()[1] == node)
+            siblingProfile = aTree[sibling][0].getProfile()
+            grandparent = aTree[aTree[node][0].getParent()][0].getParent()
+            grandparentProfile = aTree[grandparent][0].getProfile()
+            nodeDelta01 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfile, siblingProfile))/3))))
+            nodeDelta02 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(nodeProfile, grandparentProfile))/3))))
+            commonDelta = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(siblingProfile, grandparentProfile))/3))))
+            branchLength = abs(nodeDelta01 + nodeDelta02 - commonDelta)/2
+            allBranchLengths.append([node, aTree[node][0].getParent(), branchLength])
+
+        # Branch length computation if we encounter an internal node
+        else:
+            if aTree[node][0].getParent() == None:
+                continue
+            children = aTree[node][0].getChildren()
+            childProfile01 = aTree[children[0]][0].getProfile()
+            childProfile02 = aTree[children[1]][0].getProfile()
+            sibling = (aTree[aTree[node][0].getParent()][0].getChildren()[0] == node) + (aTree[aTree[node][0].getParent()][0].getChildren()[1] == node)
+            siblingProfile = aTree[sibling][0].getProfile()
+            grandparent = aTree[aTree[node][0].getParent()][0].getParent()
+            if grandparent == None:
+                continue
+            grandparentProfile = aTree[grandparent][0].getProfile()
+            childSiblingDelta01 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, siblingProfile))/3))))
+            childSiblingDelta02 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile02, siblingProfile))/3))))
+            childGrandParentDelta01 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, grandparentProfile))/3))))
+            childGrandParentDelta02 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile02, grandparentProfile))/3))))
+            childChildDelta = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, childProfile02))/3))))
+            siblingGrandParentDelta = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(siblingProfile, grandparentProfile))/3))))
+            branchLength = abs((childSiblingDelta01 + childSiblingDelta02 + childGrandParentDelta01 + childGrandParentDelta02)/4 - \
+                           (childChildDelta + siblingGrandParentDelta))/2
+            allBranchLengths.append([node, aTree[node][0].getParent(), branchLength])
+    return allBranchLengths
 
 
 

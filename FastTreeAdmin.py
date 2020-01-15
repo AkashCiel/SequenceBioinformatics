@@ -12,6 +12,10 @@ from NJFunctions import *
 from FastTreeClasses import *
 from NNIFunctions import *
 
+# Read DNA sequences from text
+# Import text file in Python
+mainFile: TextIO = open("TestSequences.txt")
+
 """
 
 fastTreeAdmin: FAST TREE ADMINISTRATOR
@@ -19,7 +23,7 @@ This function administers the entire fast tree process. There are various functi
 each of which perform a smaller operation (for example selecting the best join or re-computing the top hits of a node). 
 The fastTreeAdmin function described here orchestrates the entire process of fast tree by calling these functions and 
 passing the required parameters as and when needed. 
-For the purpose of simplicity, the procedure performed by this function can be seen as comprising of three stages:
+For the purpose of simplicity, the procedure performed by this function can be seen as comprising of four stages:
 1. INITIALISATION: 
     Operations performed during this stage are:
         a.  Initialise all the nodes of the tree and assign a profile from the input sequences to each (more details on 
@@ -35,7 +39,8 @@ For the purpose of simplicity, the procedure performed by this function can be s
     performed during this stage are:
         a.  Increment the age of all active nodes by 1. This ensures that once a node is too old, its top hits are 
             re-computed. 
-        b.  Select the best join candidates for this iteration.
+        b.  Select the best join candidates from the list of top-hits for each node for this iteration (more details about
+            finding the best join in NJFunctions documentation).
         c.  Initialise a parent node for the best join candidates, set them as children of the new node and add this sub-tree
             to the original tree; set age of new node as {age of its older child + 1}
         d.  Inactivate the two children nodes
@@ -45,6 +50,10 @@ For the purpose of simplicity, the procedure performed by this function can be s
 
 3. NNI (Nearest Neighbour Interchange):
     During this stage, fastTreeAdmin performs nearest neighbour interchange on the tree constructed in the ITERATIONS stage
+    
+4. BRANCH LENGTH Computation:
+    During this stage, fastTreeAdmin uses the computeBranchLength function to calculate the log-corrected branch lengths
+    for the entire constructed tree
 
 PLEASE NOTE: 
     All the computations mentioned above are performed by some function defined specifically for that task. These 
@@ -59,12 +68,23 @@ def fastTreeAdmin(Sequences):
     # INITIALISATION STAGE
     ######################
 
-    theTree = initTree(Sequences)   # Generate ground level nodes
-    activeNodes = len(theTree) # Initialise total active nodes count
-    totalProfile = computeProfile(Sequences)    # Generate total profile
-    iterationNumber = 1 # Keep track of iteration number
-    totalUpDistance = allUpDistances(theTree) # Store sum of all up-distances
-    for nodeIndex in theTree:    # Generate top hits for each node
+    # Generate ground level nodes
+    theTree = initTree(Sequences)
+
+    # Initialise total active nodes count
+    activeNodes = len(theTree)
+
+    # Generate total profile
+    totalProfile = computeProfile(Sequences)
+
+    # Keep track of iteration number
+    iterationNumber = 1
+
+    # Store sum of all up-distances
+    totalUpDistance = allUpDistances(theTree)
+
+    # Generate top hits for each node which does not yet has a top-hits list
+    for nodeIndex in theTree:
         if theTree[nodeIndex][0].getTopHits() == []:
             initialiseTopHits(theTree, theTree[nodeIndex][0], activeNodes, totalProfile, totalUpDistance)
 
@@ -73,25 +93,42 @@ def fastTreeAdmin(Sequences):
     ##################
 
     while activeNodes > 2:
-        for node in theTree: # Increment all active node ages by 1
+
+        # Increment all active node ages by 1
+        for node in theTree:
             if theTree[node][0].getNodeStatus() == "Active":
                 nodeAge = theTree[node][0].getAge()
                 theTree[node][0].setAge(nodeAge + 1)
-        bestJoinTuple = getBestJoin(theTree, activeNodes, totalProfile, totalUpDistance)[:2] # Find the best join
+
+        # Find the best join for this iteration
+        bestJoinTuple = getBestJoin(theTree, activeNodes, totalProfile, totalUpDistance)[:2]
+
+        # Initialise a new node with the appropriate profile and node index
         newNodeIndex = len(theTree)
         newNode = fastTreeNode(newNodeIndex, getAvgProfile(theTree[bestJoinTuple[0]][0].getProfile(), theTree[bestJoinTuple[1]][0].getProfile()))
-        theTree[newNodeIndex].append(newNode) # Add new node in the tree
+
+        # Add new node in the tree
+        theTree[newNodeIndex].append(newNode)
         theTree[newNodeIndex][0].setChildren(bestJoinTuple)
+
         # Set age of new node
         theTree[newNodeIndex][0].setAge(max(theTree[bestJoinTuple[0]][0].getAge(), theTree[bestJoinTuple[1]][0].getAge()) + 1)
+
+        # Establish child-parent connections among the proper nodes and deactivate the children nodes
         theTree[bestJoinTuple[0]][0].setParent(newNodeIndex)
         theTree[bestJoinTuple[0]][0].inActivate()
         theTree[bestJoinTuple[1]][0].setParent(newNodeIndex)
         theTree[bestJoinTuple[1]][0].inActivate()
+
+        # Reduce active node count by 1
         activeNodes -= 1
+
+        # Re-compute sum of all up-distances
         if activeNodes > 2:
-            totalUpDistance = allUpDistances(theTree)  # Re-compute sum of all up-distances
+            totalUpDistance = allUpDistances(theTree)
             reconfigureTopHits(theTree, bestJoinTuple, newNodeIndex, activeNodes, totalProfile, totalUpDistance)
+
+    # Look for the last join if we are left with only 2 active nodes
     if activeNodes == 2:
         bestJoinTuple = getBestJoinV02(theTree)
         newNodeIndex = len(theTree)
@@ -110,9 +147,6 @@ def fastTreeAdmin(Sequences):
     NNITree = nearestNeighbourExchange(theTree, len(Sequences))
     return NNITree
 
-# Read DNA sequences from text
-# Import text file in Python
-mainFile: TextIO = open("TestSequences.txt")
 
 # Read file into a text string
 InputText = mainFile.readlines()
@@ -125,34 +159,15 @@ for i in range(0, len(InputText)):
     else:
         Sequences.append(InputText[i])
 
+# Generate a phylogenetic tree post nearest-neighbour interchange
 theTree = fastTreeAdmin(Sequences)
 for node in theTree:
     print(theTree[node][0].getIndex(), theTree[node][0].getChildren(), theTree[node][0].getParent())
-    """
-    if theTree[node][0].getIndex() >= len(Sequences):
-        print(theTree[node][0].getIndex(), sequenceID[theTree[node][0].getChildren()[0]],
-              sequenceID[theTree[node][0].getChildren()[1]], theTree[node][0].getParent())
-    """
 
-"""
-Fast tree output:
+#########################################################
+############# BRANCH LENGTH COMPUTATION #################
+#########################################################
 
-((ERR2679278:0.00646,(SRR7069540:0.01168,SRR7069811:0.01679)0.950:0.00747)0.972:0.00781,
-    ((ERR502513:0.00742,(ERR502505:0.00417,ERR751299:0.00055)0.918:0.00410)0.979:0.01048,
-        ((ERR751754:0.00953,(SRR2100230:0.00531,ERR181778:0.00306)0.972:0.00639)0.880:0.00550,
-            ((ERR126620:0.00055,
-                (ERR403342:0.00916,
-                    (SRR6046603:0.00721,
-                        ((ERR2307717:0.00215,
-                            (SRR1723424:0.03109,ERR552103:0.00286)0.536:0.00129)0.731:0.00325,
-                                (SRR6896212:0.00624,(ERR553176:0.00690,ERR369756:0.03306)
-                                    0.775:0.00180)
-                                        1.000:0.30820)
-                                            0.952:0.01401)
-                                                0.939:0.00636)
-                                                    0.776:0.00119)1.000:0.34104,
-            ((ERR181435:0.00055,ERR400415:0.00627)0.826:0.00209,
-                ERR234681:0.00312)0.697:0.00053)1.000:0.11717)0.656:0.00716)0.991:0.01189,
-    ((ERR2513433:0.01121,SRR5657468:0.00144)1.000:0.03326,ERR017782:0.04824)0.340:0.00359);
-    
-"""
+branchLengths = computeBranchLengths(theTree)
+for branch in branchLengths:
+    print(branch)
