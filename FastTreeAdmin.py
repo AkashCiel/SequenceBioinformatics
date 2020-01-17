@@ -14,7 +14,11 @@ from NNIFunctions import *
 
 # Read DNA sequences from text
 # Import text file in Python
-mainFile: TextIO = open("TestSequences.txt")
+
+##################################################################
+################# Type name of input file below ##################
+##################################################################
+mainFile: TextIO = open("4Sequences.txt")
 
 """
 
@@ -161,13 +165,26 @@ for i in range(0, len(InputText)):
 
 # Generate a phylogenetic tree post nearest-neighbour interchange
 theTree = fastTreeAdmin(Sequences)
-for node in theTree:
-    print(theTree[node][0].getIndex(), theTree[node][0].getChildren(), theTree[node][0].getParent())
 
 #########################################################
 ############# BRANCH LENGTH COMPUTATION #################
 #########################################################
 
 branchLengths = computeBranchLengths(theTree)
-for branch in branchLengths:
-    print(branch)
+
+###############################################################
+######### PRINTING THE TREE NODES AND BRANCH LENGTHS ##########
+###############################################################
+
+for node in theTree:
+    if theTree[node][0].getNodeLevel() == "Leaf Node":
+        print("Index: ", theTree[node][0].getIndex(), ", Input ID: ", sequenceID[theTree[node][0].getIndex()], ", No children nodes")
+        print("Parent Index: ", theTree[node][0].getParent(), ", Branch Length = ", branchLengths[theTree[node][0].getIndex()][2])
+    else:
+        print("Index: ", theTree[node][0].getIndex())
+        print(" Child 1 Index: ", theTree[node][0].getChildren()[0], ", Branch Length = ", branchLengths[theTree[node][0].getChildren()[0]][2])
+        print(" Child 2 Index: ", theTree[node][0].getChildren()[1], ", Branch Length = ", branchLengths[theTree[node][0].getChildren()[1]][2])
+        if theTree[node][0].getParent() != None:
+            print("Parent Index: ", theTree[node][0].getParent(), ", Branch Length = ", branchLengths[theTree[node][0].getIndex()][2])
+        else:
+            print("No parent")

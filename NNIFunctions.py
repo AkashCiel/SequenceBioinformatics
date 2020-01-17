@@ -132,16 +132,21 @@ def computeBranchLengths(aTree):
             childProfile02 = aTree[children[1]][0].getProfile()
             sibling = (aTree[aTree[node][0].getParent()][0].getChildren()[0] == node) + (aTree[aTree[node][0].getParent()][0].getChildren()[1] == node)
             siblingProfile = aTree[sibling][0].getProfile()
+
+            childSiblingDelta01 = ((-3 / 4) * (math.log(abs(1 - 4 * (profileDelta(childProfile01, siblingProfile)) / 3))))
+            childSiblingDelta02 = ((-3 / 4) * (math.log(abs(1 - 4 * (profileDelta(childProfile02, siblingProfile)) / 3))))
+            childChildDelta = ((-3 / 4) * (math.log(abs(1 - 4 * (profileDelta(childProfile01, childProfile02)) / 3))))
             grandparent = aTree[aTree[node][0].getParent()][0].getParent()
             if grandparent == None:
-                continue
-            grandparentProfile = aTree[grandparent][0].getProfile()
-            childSiblingDelta01 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, siblingProfile))/3))))
-            childSiblingDelta02 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile02, siblingProfile))/3))))
-            childGrandParentDelta01 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, grandparentProfile))/3))))
-            childGrandParentDelta02 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile02, grandparentProfile))/3))))
-            childChildDelta = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, childProfile02))/3))))
-            siblingGrandParentDelta = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(siblingProfile, grandparentProfile))/3))))
+                childGrandParentDelta01 = 0.0
+                childGrandParentDelta02 = 0.0
+                siblingGrandParentDelta = 0.0
+            else:
+                grandparentProfile = aTree[grandparent][0].getProfile()
+                childGrandParentDelta01 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile01, grandparentProfile))/3))))
+                childGrandParentDelta02 = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(childProfile02, grandparentProfile))/3))))
+                siblingGrandParentDelta = ((-3/4)*(math.log(abs(1 - 4*(profileDelta(siblingProfile, grandparentProfile))/3))))
+
             branchLength = abs((childSiblingDelta01 + childSiblingDelta02 + childGrandParentDelta01 + childGrandParentDelta02)/4 - \
                            (childChildDelta + siblingGrandParentDelta))/2
             allBranchLengths.append([node, aTree[node][0].getParent(), branchLength])
